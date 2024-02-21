@@ -292,6 +292,13 @@ void CurveComponent::adjust_power_point_position(size_t idx) const {
     const auto y = static_cast<int>(std::round(getHeight() 
         * (1.0f - utli::linear_interpole(point_left.y, point_right.y, 0.5f, point_left.power))));
     m_power_points[idx]->setBounds(x - kHalfPointSize, y - kHalfPointSize, kPointSize, kPointSize);
+
+    /* 
+     * if two point's y same disable power point for it will generate nan power 
+     * if two point's x same adjust power will do nothing so disable it
+    */
+    m_power_points[idx]->setVisible(m_points[idx]->getY() != m_points[idx + 1]->getY()
+        && m_points[idx]->getX() != m_points[idx + 1]->getX());
 }
 
 void CurveComponent::power_point_moved(size_t idx) {
@@ -299,6 +306,12 @@ void CurveComponent::power_point_moved(size_t idx) {
     const auto y_ratio = 1.0f - component_y / getHeight();
     const auto point_left_y_ratio = line_points_.get_point(idx).y;
     const auto point_right_y_ratio = line_points_.get_point(idx + 1).y;
+
+    /* if two points's y are same,will generate nan power */
+    if (point_left_y_ratio == point_right_y_ratio) {
+        return;
+    }
+
     const auto reverse_blend_y = (y_ratio - point_left_y_ratio) / (point_right_y_ratio - point_left_y_ratio);
     const auto power = (0.5f - reverse_blend_y) / 0.5f;
 
