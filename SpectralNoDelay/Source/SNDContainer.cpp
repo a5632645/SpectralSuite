@@ -10,11 +10,14 @@ namespace snd {
 GDContainer::GDContainer(std::shared_ptr<PluginParameters> valueTreeState, juce::Colour textColour, int textBoxHeight)
     : valueTreeState_(valueTreeState) {
     auto& plugin_param = *static_cast<PDParameters*>(valueTreeState.get());
-    line_graphy_editor_ = std::make_unique<snd::CurveComponent>(plugin_param.GetLinePoints());
+    line_graphy_editor_ = std::make_unique<snd::LineGraphEditor>(plugin_param.GetLinePoints());
     addAndMakeVisible(line_graphy_editor_.get());
 
     line_text_editor_ = std::make_unique<snd::CurveEditor>(plugin_param.GetLinePoints());
     addChildComponent(line_text_editor_.get());
+
+    line_graph_control_ = std::make_unique<LineGraphControl>(*line_graphy_editor_);
+    addAndMakeVisible(line_graph_control_.get());
 
     show_text_editor_checkbox_ = std::make_unique<snd::TitledCheckBox>("show curve editor");
     static_cast<TitledCheckBox*>(show_text_editor_checkbox_.get())->GetCheckBox().onClick =
@@ -47,8 +50,9 @@ void GDContainer::resized() {
     static constexpr int margin = 3;
 
     auto b = getLocalBounds();
-    b.removeFromTop(20);
+    line_graph_control_->setBounds(b.removeFromTop(20));
     b.removeFromLeft(margin);
+    b.removeFromRight(margin);
 
     line_graphy_editor_->setBounds(b.withHeight(getWidth() * 0.5f));
     b.removeFromTop(line_graphy_editor_->getHeight() + margin);

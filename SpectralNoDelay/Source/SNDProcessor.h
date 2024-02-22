@@ -33,7 +33,7 @@ public:
 
     void SetPhaseShiftBuffer(std::vector<float>* ptr) { ptr_phase_shift_buffer_ = ptr; }
     void SetDelayMode(DelayMode mode) { delay_mode_ = mode; }
-    void SetDelayTime(float ms) { delay_time_ms_ = ms; }
+    void SetDelayTime(float ms) { delay_time_ms_.setTargetValue(ms); }
     void SetTimeMirror(bool mirror) { time_mirror_ = mirror; }
     void SetTimeDiv10(bool scale_down) { time_div_10_ = scale_down; }
     void SetGroupDelayBeginAngle(float angle_phase) { group_delay_begin_phase_ = angle_phase * std::numbers::pi_v<float> / 180.0f; }
@@ -43,7 +43,7 @@ private:
 
     std::vector<float>* ptr_phase_shift_buffer_{};
     DelayMode delay_mode_{ DelayMode::PHASE_DELAY };
-    float delay_time_ms_{ kDefaultDelayTime };
+    juce::SmoothedValue<float> delay_time_ms_{ kDefaultDelayTime };
     float group_delay_begin_phase_{ kBeginPhase };
     bool time_mirror_{ false };
     bool time_div_10_{ false };

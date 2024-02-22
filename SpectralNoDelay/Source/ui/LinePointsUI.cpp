@@ -68,7 +68,7 @@ private:
 class PointProcessor
     : public juce::MouseListener {
 public:
-    explicit PointProcessor(CurveComponent& c)
+    explicit PointProcessor(LineGraphEditor& c)
         : m_curve_component(c) {
     }
 
@@ -92,7 +92,7 @@ public:
     }
 private:
     juce::ComponentDragger m_component_dragger;
-    CurveComponent& m_curve_component;
+    LineGraphEditor& m_curve_component;
 };
 
 /**
@@ -101,7 +101,7 @@ private:
 class PowerPointProcessor
     : public juce::MouseListener {
 public:
-    explicit PowerPointProcessor(CurveComponent& c)
+    explicit PowerPointProcessor(LineGraphEditor& c)
         : m_curve_component(c) {
     }
 
@@ -128,12 +128,12 @@ public:
 private:
     int m_old_x{};
     juce::ComponentDragger m_component_dragger;
-    CurveComponent& m_curve_component;
+    LineGraphEditor& m_curve_component;
 };
 }
 
 // ============================================================================
-CurveComponent::CurveComponent(LinePoints& generator)
+LineGraphEditor::LineGraphEditor(LinePoints& generator)
     : line_points_(generator)
     , line_generator_(generator) {
     m_point_processor = std::make_unique<detail::PointProcessor>(*this);
@@ -144,14 +144,25 @@ CurveComponent::CurveComponent(LinePoints& generator)
     rebuild_interface();
 }
 
-CurveComponent::~CurveComponent() {
+LineGraphEditor::~LineGraphEditor() {
     line_points_.remove_listener(this);
     line_generator_.RemoveListener(this);
 }
 
-void CurveComponent::paint(juce::Graphics& g) {
+void LineGraphEditor::paint(juce::Graphics& g) {
     g.fillAll(juce::Colours::black);
     g.setColour(juce::Colours::green);
+
+    if (show_grid_) {
+        for (int i = 1; i < x_grid_; ++i) {
+            auto x = static_cast<float>(i) / static_cast<float>(x_grid_) * getWidth();
+            g.drawVerticalLine(static_cast<int>(x), 0.0f, static_cast<float>(getHeight()));
+        }
+        for (int i = 1; i < y_grid_; ++i) {
+            auto y = static_cast<float>(i) / static_cast<float>(y_grid_) * getHeight();
+            g.drawHorizontalLine(static_cast<int>(y), 0.0f, static_cast<float>(getWidth()));
+        }
+    }
 
     const auto& buffer = line_generator_.GetRenderBuffer();
     juce::Path path;
@@ -174,7 +185,7 @@ void CurveComponent::paint(juce::Graphics& g) {
     g.strokePath(path, juce::PathStrokeType(3.0f));
 }
 
-void CurveComponent::resized() {
+void LineGraphEditor::resized() {
     const auto num_point = m_points.size();
     for (int i = 0; i < num_point; ++i) {
         adjust_point_position(i);
@@ -188,7 +199,7 @@ void CurveComponent::resized() {
     line_generator_.SetBufferSize(std::max(0, getWidth()));
 }
 
-void CurveComponent::remove_point_component(size_t idx) {
+void LineGraphEditor::remove_point_component(size_t idx) {
     /* can not delete head and tail point */
     if (idx == 0 || idx == m_points.size() - 1) {
         return;
@@ -197,7 +208,7 @@ void CurveComponent::remove_point_component(size_t idx) {
     line_points_.remove(idx);
 }
 
-void CurveComponent::mouseDoubleClick(const juce::MouseEvent& e) {
+void LineGraphEditor::mouseDoubleClick(const juce::MouseEvent& e) {
     /* generate a point at here */
     const auto bound = getLocalBounds().toFloat();
     LinePoints::Point point{
@@ -209,7 +220,7 @@ void CurveComponent::mouseDoubleClick(const juce::MouseEvent& e) {
     line_points_.add_point(point);
 }
 
-void CurveComponent::rebuild_interface() {
+void LineGraphEditor::rebuild_interface() {
     const auto num_point = line_points_.GetNumPoints();
     m_points.clear();
     m_power_points.clear();
@@ -237,7 +248,13 @@ void CurveComponent::rebuild_interface() {
     resized();
 }
 
-void CurveComponent::xy_point_moved(size_t idx) {
+void LineGraphEditor::xy_point_moved(size_t idx) {
+    {
+        auto* pc = m_points[idx];
+        const auto center = pc->getBounds().getCentre().toFloat();
+        pc->setBounds(pc->getBounds().withCentre(SnapPoint(center).roundToInt()));
+    }
+
     if (idx == 0) {
         /* First point can only move up and down */
         auto* pc = m_points.getFirst();
@@ -273,14 +290,14 @@ void CurveComponent::xy_point_moved(size_t idx) {
     line_points_.change(idx, point);
 }
 
-void CurveComponent::adjust_point_position(size_t idx) const {
+void LineGraphEditor::adjust_point_position(size_t idx) const {
     const auto point = line_points_.get_point(idx);
     const auto x = static_cast<int>(getWidth() * point.x - kHalfPointSize);
     const auto y = static_cast<int>(std::round(getHeight() * (1.0f - point.y) - kHalfPointSize));
     m_points[static_cast<int>(idx)]->setBounds(x, y, kPointSize, kPointSize);
 }
 
-void CurveComponent::adjust_power_point_position(size_t idx) const {
+void LineGraphEditor::adjust_power_point_position(size_t idx) const {
     if (idx >= m_power_points.size()) {
         return;
     }
@@ -301,8 +318,8 @@ void CurveComponent::adjust_power_point_position(size_t idx) const {
         && m_points[idx]->getX() != m_points[idx + 1]->getX());
 }
 
-void CurveComponent::power_point_moved(size_t idx) {
-    const auto component_y = static_cast<float>(m_power_points[idx]->getBounds().getCentreY());
+void LineGraphEditor::power_point_moved(size_t idx) {
+    const auto component_y = SnapY(m_power_points[idx]->getBounds().toFloat().getCentreY());
     const auto y_ratio = 1.0f - component_y / getHeight();
     const auto point_left_y_ratio = line_points_.get_point(idx).y;
     const auto point_right_y_ratio = line_points_.get_point(idx + 1).y;
@@ -320,35 +337,35 @@ void CurveComponent::power_point_moved(size_t idx) {
     line_points_.change(idx, point);
 }
 
-void CurveComponent::power_point_reset(size_t idx) {
+void LineGraphEditor::power_point_reset(size_t idx) {
     auto point = line_points_.get_point(idx);
     point.power = 0.0f;
     line_points_.change(idx, point);
 }
 
-std::unique_ptr<detail::PointComponent> CurveComponent::create_point_component() {
+std::unique_ptr<detail::PointComponent> LineGraphEditor::create_point_component() {
     auto p = std::make_unique<detail::PointComponent>();
     p->addMouseListener(m_point_processor.get(), false);
     return p;
 }
 
-std::unique_ptr<detail::PowerPointComponent> CurveComponent::create_power_point_component() {
+std::unique_ptr<detail::PowerPointComponent> LineGraphEditor::create_power_point_component() {
     auto p = std::make_unique<detail::PowerPointComponent>();
     p->addMouseListener(m_power_point_processor.get(), false);
     return p;
 }
 
-void CurveComponent::DataChanged(LineGenerator* /*ptr_generator*/, int begin, int end) {
+void LineGraphEditor::DataChanged(LineGenerator* /*ptr_generator*/, int begin, int end) {
     repaint(juce::Rectangle<int>(begin, 0, end - begin, getHeight()));
 }
 
-void CurveComponent::point_changed(LinePoints& generator, int idx) {
+void LineGraphEditor::point_changed(LinePoints& generator, int idx) {
     adjust_point_position(idx);
     adjust_power_point_position(idx);
     adjust_power_point_position(idx - 1);
 }
 
-void CurveComponent::point_added_at(LinePoints& generator, int idx_at, LinePoints::Point point) {
+void LineGraphEditor::point_added_at(LinePoints& generator, int idx_at, LinePoints::Point point) {
     auto* pc = m_points.insert(idx_at, create_point_component());
     auto* ppc = m_power_points.insert(idx_at, create_power_point_component());
 
@@ -369,7 +386,7 @@ void CurveComponent::point_added_at(LinePoints& generator, int idx_at, LinePoint
     adjust_power_point_position(idx_at - 1);
 }
 
-void CurveComponent::point_removed(LinePoints& generator, int idx) {
+void LineGraphEditor::point_removed(LinePoints& generator, int idx) {
     m_points.remove(idx);
     m_power_points.remove(idx);
 
@@ -385,7 +402,7 @@ void CurveComponent::point_removed(LinePoints& generator, int idx) {
     adjust_power_point_position(idx - 1);
 }
 
-void CurveComponent::reloaded(LinePoints& generator) {
+void LineGraphEditor::reloaded(LinePoints& generator) {
     rebuild_interface();
 }
 }

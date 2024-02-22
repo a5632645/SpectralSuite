@@ -8,6 +8,10 @@
               pluginCode="AAAA" jucerFormatVersion="1" displaySplashScreen="1"
               addUsingNamespaceToJuceHeader="1" cppLanguageStandard="20">
   <MAINGROUP id="NNl5AK" name="SpectralNoDelay">
+    <GROUP id="{1AD6F7CD-A4EB-505C-C1C8-BA98D4FB42AC}" name="Assets">
+      <FILE id="lWtG9R" name="grid.svg" compile="0" resource="1" file="Assets/grid.svg"/>
+      <FILE id="iuDFo4" name="magnet.svg" compile="0" resource="1" file="Assets/magnet.svg"/>
+    </GROUP>
     <GROUP id="{E11A4544-C473-A9D8-27C6-3240AE094866}" name="Source">
       <FILE id="V0sFyk" name="utli.h" compile="0" resource="0" file="Source/utli.h"/>
       <GROUP id="{D44C9185-16EB-4035-8223-E7E568319CF7}" name="data">
@@ -26,6 +30,10 @@
               file="Source/ui/HorizontalSlider.cpp"/>
         <FILE id="hvW4gZ" name="HorizontalSlider.h" compile="0" resource="0"
               file="Source/ui/HorizontalSlider.h"/>
+        <FILE id="WiUdoO" name="LineGraphControl.cpp" compile="1" resource="0"
+              file="Source/ui/LineGraphControl.cpp"/>
+        <FILE id="xli9fu" name="LineGraphControl.h" compile="0" resource="0"
+              file="Source/ui/LineGraphControl.h"/>
         <FILE id="A1L24u" name="LinePointsUI.cpp" compile="1" resource="0"
               file="Source/ui/LinePointsUI.cpp"/>
         <FILE id="v2dGUi" name="LinePointsUI.h" compile="0" resource="0" file="Source/ui/LinePointsUI.h"/>
@@ -33,6 +41,8 @@
               file="Source/ui/LineTextEditor.cpp"/>
         <FILE id="JPmHWC" name="LineTextEditor.h" compile="0" resource="0"
               file="Source/ui/LineTextEditor.h"/>
+        <FILE id="Bf300z" name="TextToggleButton.h" compile="0" resource="0"
+              file="Source/ui/TextToggleButton.h"/>
         <FILE id="qHyoaz" name="TitledCheckBox.cpp" compile="1" resource="0"
               file="Source/ui/TitledCheckBox.cpp"/>
         <FILE id="KWaBdU" name="TitledCheckBox.h" compile="0" resource="0"

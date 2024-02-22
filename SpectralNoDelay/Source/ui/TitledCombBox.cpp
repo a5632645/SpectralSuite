@@ -30,6 +30,6 @@ TitledCombBox::~TitledCombBox() {
 
 void TitledCombBox::resized() {
     label_.setBoundsRelative(0.0f, 0.0f, 0.3f, 1.0f);
-    combobox_.setBoundsRelative(0.3f, 0.0f, 0.7f, 1.0f);
+    combobox_.setBoundsRelative(0.3f, 0.2f, 0.7f, 0.6f);
 }
 }

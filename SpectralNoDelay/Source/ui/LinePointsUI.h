@@ -19,16 +19,15 @@ namespace snd {
 namespace detail {
 class PointComponent;
 class PowerPointComponent;
-class CurveEditor;
 }
 
-class CurveComponent
+class LineGraphEditor
     : public juce::Component
     , private LinePoints::Listener
     , private LineGenerator::Listener {
 public:
-    explicit CurveComponent(LinePoints& generator);
-    ~CurveComponent() override;
+    explicit LineGraphEditor(LinePoints& generator);
+    ~LineGraphEditor() override;
 
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -39,6 +38,11 @@ public:
     void power_point_reset(size_t idx);
 
     void mouseDoubleClick(const juce::MouseEvent& e) override;
+
+    void EnableSnapGrid(bool b) { snap_ = b; }
+    void ShowGrid(bool b) { show_grid_ = b; repaint(); }
+    void SetXGrid(int x) { x_grid_ = std::max(x, 1); repaint(); }
+    void SetYGrid(int y) { y_grid_ = std::max(y, 1); repaint(); }
 private:
     // ========================================================================
     void rebuild_interface();
@@ -54,6 +58,8 @@ private:
     void point_removed(LinePoints& generator, int idx) override;
     void reloaded(LinePoints& generator) override;
 
+    // ========================================================================
+    void DataChanged(LineGenerator* ptr_generator, int begin, int end) override;
 
     // ========================================================================
     LinePoints& line_points_;
@@ -65,8 +71,61 @@ private:
     std::unique_ptr<juce::MouseListener> m_power_point_processor;
 
     // ========================================================================
-    void DataChanged(LineGenerator* ptr_generator, int begin, int end) override;
+    // snap and grid
+    // ========================================================================
+    static constexpr float kMinPixelDistance = 4.0f;
+    bool show_grid_{ true };
+    bool snap_{ true };
+    int x_grid_{4};
+    int y_grid_{4};
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CurveComponent)
+    template<typename T>
+    T SnapX(T x) const {
+        if (!snap_) {
+            return x;
+        }
+
+        float x_grid_size = static_cast<float>(getWidth()) / static_cast<float>(x_grid_);
+        float left_x = std::floor(x / x_grid_size) * x_grid_size;
+        float right_x = left_x + x_grid_size;
+
+        if (std::abs(x - left_x) < kMinPixelDistance) {
+            return static_cast<T>(left_x);
+        }
+        else if (std::abs(x - right_x) < kMinPixelDistance) {
+            return static_cast<T>(right_x);
+        }
+        else {
+            return x;
+        }
+    }
+
+    template<typename T>
+    T SnapY(T y) const {
+        if (!snap_) {
+            return y;
+        }
+
+        float y_grid_size = static_cast<float>(getHeight()) / static_cast<float>(y_grid_);
+        float left_y = std::floor(y / y_grid_size) * y_grid_size;
+        float right_y = left_y + y_grid_size;
+
+        if (std::abs(y - left_y) < kMinPixelDistance) {
+            return static_cast<T>(left_y);
+        }
+        else if (std::abs(y - right_y) < kMinPixelDistance) {
+            return static_cast<T>(right_y);
+        }
+        else {
+            return y;
+        }
+    }
+
+    template<typename T>
+    juce::Point<T> SnapPoint(juce::Point<T> point) {
+        return juce::Point{ SnapX(point.x),SnapY(point.y) };
+    }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LineGraphEditor)
 };
 }

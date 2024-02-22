@@ -20,6 +20,7 @@ SNDProcessor::SNDProcessor(int fftSize, int hopSize, int offset, int sampleRate,
 void SNDProcessor::spectral_process(const PolarVector& in, PolarVector& out, int bins) {
     out[0].m_mag = in[0].m_mag;
     out[0].m_phase = in[0].m_phase;
+    delay_time_ms_.skip(getHopSize());
 
     switch (delay_mode_) {
     case DelayMode::PHASE_DELAY:
@@ -36,7 +37,8 @@ void SNDProcessor::spectral_process(const PolarVector& in, PolarVector& out, int
 
 void SNDProcessor::PhaseDelayProcess(const PolarVector& in, PolarVector& out, int bins) {
     const float sample_rate_div_1000 = getSampleRate() / 1000.0f;
-    const float delay_time_ms = time_div_10_ ? delay_time_ms_ * 0.1f : delay_time_ms_;
+    const float delay_time_sv = delay_time_ms_.getNextValue();
+    const float delay_time_ms = time_div_10_ ? delay_time_sv * 0.1f : delay_time_sv;
     const float max_delay_num_samples = delay_time_ms * sample_rate_div_1000;
     const float min_delay_num_samples = time_mirror_ ? -max_delay_num_samples : 0.0f;
 
@@ -51,7 +53,8 @@ void SNDProcessor::PhaseDelayProcess(const PolarVector& in, PolarVector& out, in
 
 void SNDProcessor::GroupDelayProcess(const PolarVector& in, PolarVector& out, int bins) {
     const float sample_rate_div_1000 = getSampleRate() / 1000.0f;
-    const float delay_time_ms = time_div_10_ ? delay_time_ms_ * 0.1f : delay_time_ms_;
+    const float delay_time_sv = delay_time_ms_.getNextValue();
+    const float delay_time_ms = time_div_10_ ? delay_time_sv * 0.1f : delay_time_sv;
     const float max_delay_num_samples = delay_time_ms * sample_rate_div_1000;
     const float min_delay_num_samples = time_mirror_ ? -max_delay_num_samples : 0.0f;
     const float delta_frequency = std::numbers::pi_v<float> / static_cast<float>(bins);
