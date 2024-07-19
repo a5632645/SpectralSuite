@@ -92,4 +92,5 @@ public:
     virtual void process(const FftDecimal* input, FftDecimal* output, int blockSize);
     // spectral_process is a pure function that needs to be defined by class derivatives
     virtual void spectral_process(const PolarVector &in, PolarVector &out, int bins) = 0;
+    virtual void spectral_process(const std::vector<BusPolarData>& in, BusPolarData& out, int bins) = 0;
 };

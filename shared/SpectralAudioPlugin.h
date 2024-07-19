@@ -108,7 +108,7 @@ private:
             || m_audioProcessorInteractor->isPreparingToPlay()
             || m_audioProcessorInteractor->isPlaying()
             || m_output.empty()
-            || m_input.empty();
+            || m_inputBusDatas.empty();
     };
     
     std::shared_ptr<PluginParameters> parameters;
@@ -120,9 +120,9 @@ private:
     FftWindowChoiceAdapter m_fftWindowChoiceAdapter;
 	FftSwitcherThread m_fftSwitcher;
 	
-	// io buffers: TODO n chan
 	int m_internalBufferReadWriteIndex;
-	std::vector<std::vector<float>> m_input;
+	//std::vector<std::vector<float>> m_input;
+    std::vector<BusAudioData> m_inputBusDatas;
 	std::vector<std::vector<float>> m_output;
 	
 	//SpectralAudioPluginUi* m_ui;	

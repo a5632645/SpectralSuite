@@ -26,6 +26,8 @@ public:
 	virtual void onFftSizeChanged() {};	
 	
     virtual void process(std::vector<std::vector<float>>* input, std::vector<std::vector<float>>* output);
+    // single output bus
+    virtual void process(std::vector<BusAudioData>& input, BusAudioData& output);
 	
 	void prepareToPlay(int fftSize, int sampleRate, int channelCount);			
 	void setFftSize(int fftSize);

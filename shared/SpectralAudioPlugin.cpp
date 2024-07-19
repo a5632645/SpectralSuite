@@ -210,7 +210,20 @@ void SpectralAudioPlugin::prepareToPlay (double sampleRate, int)
         return;
     }
     
-	m_output.clear();
+    // set up output bus
+    auto numOutputChannel = getBusesLayout().getMainOutputChannels();
+    m_output.resize(numOutputChannel);
+
+    // set up input bus
+    auto numInputBuses = getBusCount(true);
+    m_inputBusDatas.resize(numInputBuses);
+
+    for (int i = 0; i < numInputBuses; ++i) 
+    {
+        jassert(getBus(true, i)->getNumberOfChannels() == numOutputChannel);
+        m_inputBusDatas[i].resize(numOutputChannel);
+    }
+	/*m_output.clear();
 	m_input.clear();
     
 	for (
@@ -221,7 +234,7 @@ void SpectralAudioPlugin::prepareToPlay (double sampleRate, int)
 	{
 		m_output.push_back(std::vector<float>());
 		m_input.push_back(std::vector<float>());
-	}
+	}*/
     
     const int fftSize = m_fftSizeChoiceAdapter.fftSize();
 	m_audioProcessorInteractor->prepareToPlay(fftSize, (int)sampleRate, getBusesLayout().getMainOutputChannels());
@@ -260,7 +273,7 @@ void SpectralAudioPlugin::emptyOutputs() {
 	}	
 }
 
-void SpectralAudioPlugin::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiBuffer)
+void SpectralAudioPlugin::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiBuffer) 
 {
 	if (m_fftSwitcher.isBusy() || m_audioProcessorInteractor->isPreparingToPlay()) {
 		m_internalBufferReadWriteIndex = 0;
@@ -369,9 +382,11 @@ void SpectralAudioPlugin::setFftSize(int size) {
 		output.resize(hopSize, 0.f);
 	}
 
-	for(std::vector<float>& input : m_input)
+	for(auto& busVec : m_inputBusDatas)
 	{
-		input.resize(hopSize, 0.f);
+        for (auto& channelVec : busVec) {
+            channelVec.resize(hopSize, 0.f);
+        }
 	}
 
 	setLatencySamples(size + hopSize);

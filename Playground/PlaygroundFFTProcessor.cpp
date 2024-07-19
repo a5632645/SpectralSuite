@@ -12,7 +12,7 @@ PlaygroundFFTProcessor::PlaygroundFFTProcessor(int size, int hops, int offset, i
     m_fftThread->addWorker(this);
     
     #ifdef STRETCH_USING_LARGE_OUTPUT_FFT
-    ifft = new kissfft<FftDecimal> (524288, true);
+    ifft = std::make_unique<kissfft<FftDecimal>>(524288, true);
     m_stretchedOutput.resize(524288 /* 2^19, just above 10 seconds at 44.1khz */, 0.f);
     Cpx emptyCpx(0, 0);
     m_expandedInput.resize(524288, emptyCpx);
@@ -21,7 +21,7 @@ PlaygroundFFTProcessor::PlaygroundFFTProcessor(int size, int hops, int offset, i
     // move past end to trigger fft on first run
     m_stretchedOutputReadIndex = (int)m_stretchedOutput.size() + 1;
 #else
-    ifft = new kissfft<FftDecimal> (size, true);
+    ifft = std::make_unique<kissfft<FftDecimal>>(size, true);
 #endif
 }
 
