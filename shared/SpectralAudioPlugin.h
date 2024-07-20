@@ -32,27 +32,10 @@ public:
         virtual Array<int> fftSizesToNotInclude() { return Array<int>(); };
     };
 
-    //	class Dependencies {
-    //	public:
-    //		Dependencies(std::shared_ptr<PluginParameters> pluginParameters, std::unique_ptr<SpectralAudioProcessorInteractor> spectralAudioProcessor, std::unique_ptr<ParameterContainerComponent> parametersUi)
-    //			: parameters(pluginParameters), parametersUi(parametersUi.release()), spectralAudioProcessor(spectralAudioProcessor.release()) {}
-    //
-    //		std::shared_ptr<PluginParameters> getParams() { return parameters; }
-    //		std::unique_ptr<ParameterContainerComponent> moveUi() { return std::move(parametersUi); }
-    //		std::unique_ptr<SpectralAudioProcessorInteractor> moveProcessor() { return std::move(spectralAudioProcessor); }
-    //
-    //	private:
-    //		std::shared_ptr<PluginParameters> parameters;
-    //		std::unique_ptr<ParameterContainerComponent> parametersUi;
-    //		std::unique_ptr<SpectralAudioProcessorInteractor> spectralAudioProcessor;
-    //	};
 
-    //	typedef std::unique_ptr<Dependencies>(*DependencyCreator)(SpectralAudioPlugin*);
 
     SpectralAudioPlugin(
         DependencyFactory* dependencies
-        //std::unique_ptr<SpectralAudioProcessor> audioProcessor,
-        //std::unique_ptr<ParameterContainerComponentFactory> parameterComponentFactory,
     );
     ~SpectralAudioPlugin();
 
@@ -102,19 +85,15 @@ private:
     void emptyOutputs();
     void setFftSize(int fftSize);
     void initialiseParameters();
-    //bool isPreparingToPlay() const { return m_audioProcessorInteractor->isPreparingToPlay(); }
     bool isPreparingToPlay() const { return true; }
     bool isInvalidFftModificationState() const {
         return
             m_fftSwitcher.threadShouldExit()
-            //|| m_audioProcessorInteractor->isPreparingToPlay()
-            //|| m_audioProcessorInteractor->isPlaying()
             || m_output.empty()
             || m_inputBusDatas.empty();
     };
 
     std::shared_ptr<PluginParameters> parameters;
-    //std::unique_ptr<SpectralAudioProcessorInteractor> m_audioProcessorInteractor;
     FftCircleBuffer m_testDev;
 
     FftSizeChoiceAdapter m_fftSizeChoiceAdapter;
@@ -124,12 +103,9 @@ private:
     FftSwitcherThread m_fftSwitcher;
 
     int m_internalBufferReadWriteIndex;
-    //std::vector<std::vector<float>> m_input;
     std::vector<BusAudioData> m_inputBusDatas;
-    //std::vector<std::vector<float>> m_output;
     BusAudioData m_output;
 
-    //SpectralAudioPluginUi* m_ui;
     VersionCheckThread m_versionCheckThread;
     std::unique_ptr<DependencyFactory> m_dependencyFactory;
 

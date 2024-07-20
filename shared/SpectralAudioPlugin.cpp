@@ -32,7 +32,7 @@ SpectralAudioPlugin::SpectralAudioPlugin(
     m_internalBufferReadWriteIndex(0),
     m_versionCheckThread(VersionCode, "https://www.andrewreeman.com/spectral_suite_publish.json"),
     m_dependencyFactory(dependencies),
-    m_testDev(dependencies->createProcessor(this), 1024, 256, 48000.0f)
+    m_testDev(dependencies->createProcessor(this), 1024, 4, 48000.0f)
 {
     this->initialiseParameters();
 }
@@ -52,7 +52,6 @@ SpectralAudioPlugin::~SpectralAudioPlugin()
 void SpectralAudioPlugin::switchFftSize()
 {
     if (isInvalidFftModificationState()) { return; }
-    //    if (m_audioProcessorInteractor->isPreparingToPlay()) { return; }
 
     setFftSize(m_fftSizeChoiceAdapter.fftSize());
 
@@ -105,7 +104,7 @@ void SpectralAudioPlugin::switchOverlapCount() {
         // TODO: use mutex when modifying fft buffers
         if (!m_output.empty() && !output.empty())
         {
-            output.resize(hopSize, 0.f);
+            output.resize(hopSize, 0.f); // what?,directly throw all old audio data?
         }
     }
 

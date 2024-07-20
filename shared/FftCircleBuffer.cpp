@@ -10,43 +10,11 @@
 
 #include "FftCircleBuffer.h"
 
-FftCircleBuffer::FftCircleBuffer(std::unique_ptr<SpectralAudioProcessorInteractor> processor, int fftSize, int fftHop, float sampleRate)
+FftCircleBuffer::FftCircleBuffer(std::unique_ptr<SpectralAudioProcessorInteractor> processor, int fftSize, int overlay, float sampleRate)
     : m_spectralProcessor(std::move(processor)) {
-    m_fftSize = fftSize;
-    m_hopSize = fftHop;
-    m_spectralDataLen = fftSize / 2;
     m_sampleRate = sampleRate;
-
-    m_fft = std::make_unique<kissfft<FftDecimal>>(fftSize, false);
-    m_ifft = std::make_unique<kissfft<FftDecimal>>(fftSize, true);
-
-    auto busLayout = m_spectralProcessor->getProcessorBusWant();
-    m_input.resize(busLayout.inputBusCount);
-    for (auto& bus : m_input) {
-        bus.resize(busLayout.channelPerInputBus);
-        for (auto& ch : bus) {
-            ch.resize(fftSize);
-        }
-    }
-    m_polarInput.resize(busLayout.inputBusCount);
-    for (auto& bus : m_polarInput) {
-        bus.resize(busLayout.channelPerInputBus);
-        for (auto& ch : bus) {
-            ch.freqs.resize(fftSize);
-            ch.polar.resize(fftSize);
-        }
-    }
-    m_output.resize(busLayout.outputBusChannelCount);
-    for (auto& ch : m_output) {
-        ch.resize(fftSize);
-    }
-    m_polarOutput.resize(busLayout.outputBusChannelCount);
-    for (auto& ch : m_polarOutput) {
-        ch.freqs.resize(fftSize);
-        ch.polar.resize(fftSize);
-    }
-    m_fftCpxIn.resize(fftSize);
-    m_fftCpxOut.resize(fftSize);
+    SetFftNumOverlay(overlay);
+    SetFftSize(fftSize);
 }
 
 void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& out, int blockSize) {
@@ -64,7 +32,7 @@ void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& 
     }
     m_inputWriteCount += blockSize;
     m_inputWriteOffset += blockSize;
-    m_inputWriteOffset &= (m_fftSize - 1); // limit
+    m_inputWriteOffset &= (m_ioBufferSize - 1); // limit
 
     if (m_inputWriteCount >= m_fftSize) {
         // float into complex
@@ -79,6 +47,7 @@ void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& 
                                busData[ch].cbegin() + m_inputReadOffset,
                                it,
                                [](float v) {return Cpx{ v,0.0f }; });
+                m_window.applyWindow(m_fftCpxIn);
 
                 // do fft
                 m_fft->transform(m_fftCpxIn.data(), m_fftCpxOut.data());
@@ -91,7 +60,7 @@ void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& 
             }
         }
         m_inputReadOffset += blockSize;
-        m_inputReadOffset &= (m_fftSize - 1); // limit
+        m_inputReadOffset &= (m_ioBufferSize - 1); // limit
         m_inputWriteCount -= blockSize; // step hop size
 
         // freq processing
@@ -125,9 +94,10 @@ void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& 
 
             // ifft
             m_ifft->transform(m_fftCpxIn.data(), m_fftCpxOut.data());
+            m_window.applyWindow(m_fftCpxOut);
 
             // overlay add output
-            auto can_write = m_fftSize - m_outputWriteOffset;
+            auto can_write = m_ioBufferSize - m_outputWriteOffset;
             std::transform(m_fftCpxOut.cbegin(), m_fftCpxOut.cbegin() + can_write,
                            m_output[ch].cbegin() + m_outputWriteOffset,
                            m_output[ch].begin() + m_outputWriteOffset,
@@ -138,7 +108,7 @@ void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& 
                            [](Cpx const& cpx, float v) {return cpx.real() + v; });
         }
         m_outputWriteOffset += blockSize;
-        m_outputWriteOffset &= (m_fftSize - 1); // limit
+        m_outputWriteOffset &= (m_ioBufferSize - 1); // limit
         m_outputWriteCount += blockSize;
     }
 
@@ -146,9 +116,74 @@ void FftCircleBuffer::processBlock(std::vector<BusAudioData>& in, BusAudioData& 
     if (m_outputWriteCount >= blockSize) {
         for (int ch = 0; ch < inChannelNum; ++ch) {
             std::copy_n(m_output[ch].cbegin() + m_outputReadOffset, blockSize, out[ch].begin());
+            std::fill_n(m_output[ch].begin() + m_outputReadOffset, blockSize, 0.0f);
         }
         m_outputReadOffset += blockSize;
         m_outputReadOffset &= (m_fftSize - 1); // limit
         m_outputWriteCount -= blockSize;
     }
+}
+
+void FftCircleBuffer::SetFftSize(int newFftSize)
+{
+    if (m_fftSize == newFftSize) {
+        return;
+    }
+
+    if (newFftSize > m_fftSize) { // expand io buffer
+        m_ioBufferSize = newFftSize;
+        auto busLayout = m_spectralProcessor->getProcessorBusWant();
+        m_input.resize(busLayout.inputBusCount);
+        for (auto& bus : m_input) {
+            bus.resize(busLayout.channelPerInputBus);
+            for (auto& ch : bus) {
+                ch.resize(m_ioBufferSize);
+            }
+        }
+        m_output.resize(busLayout.outputBusChannelCount);
+        for (auto& ch : m_output) {
+            ch.resize(m_ioBufferSize);
+        }
+    }
+
+    m_fft = std::make_unique<kissfft<FftDecimal>>(newFftSize, false);
+    m_ifft = std::make_unique<kissfft<FftDecimal>>(newFftSize, true);
+
+    { // resize io polar
+        auto busLayout = m_spectralProcessor->getProcessorBusWant();
+        m_polarInput.resize(busLayout.inputBusCount);
+        for (auto& bus : m_polarInput) {
+            bus.resize(busLayout.channelPerInputBus);
+            for (auto& ch : bus) {
+                ch.freqs.resize(newFftSize);
+                ch.polar.resize(newFftSize);
+            }
+        }
+        m_polarOutput.resize(busLayout.outputBusChannelCount);
+        for (auto& ch : m_polarOutput) {
+            ch.freqs.resize(newFftSize);
+            ch.polar.resize(newFftSize);
+        }
+    }
+
+    // resize fft block
+    m_fftCpxIn.resize(newFftSize);
+    m_fftCpxOut.resize(newFftSize);
+
+    // set others
+    SetFftHop(newFftSize / m_numOverlay);
+    m_window.setWindowLen(newFftSize);
+    m_fftSize = newFftSize;
+    m_spectralDataLen = newFftSize / 2;
+}
+
+void FftCircleBuffer::SetFftNumOverlay(int size)
+{
+    m_numOverlay = size;
+    SetFftHop(m_fftSize / m_numOverlay);
+}
+
+void FftCircleBuffer::SetFftHop(int size)
+{
+    m_hopSize = size;
 }
