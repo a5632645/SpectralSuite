@@ -12,3 +12,18 @@ using BusAudioData = std::vector<ChannelAudioData>;
 
 using ChannelPolarData = PolarVector;
 using BusPolarData = std::vector<ChannelPolarData>;
+
+using ChannelCpxData = std::vector<Cpx>;
+using BusCpxData = std::vector<ChannelCpxData>;
+
+struct ChannelPolarPlusData {
+    ChannelPolarData polar;
+    std::vector<float> freqs;
+};
+using BusPolarPlusData = std::vector<ChannelPolarPlusData>;
+
+struct SimpleBusLayout {
+    int inputBusCount;
+    int channelPerInputBus;
+    int outputBusChannelCount;
+};

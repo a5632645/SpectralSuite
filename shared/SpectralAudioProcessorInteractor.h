@@ -9,46 +9,45 @@
 class SpectralAudioProcessorInteractor {
 public:
     SpectralAudioProcessorInteractor(int numOverlaps);
-    virtual ~SpectralAudioProcessorInteractor(){}
+    virtual ~SpectralAudioProcessorInteractor() {}
 
-	int getHopSize() const { return m_fftHopSize; }	
-	int getFftSize();
-	int getSampleRate() const { return m_sampleRate; }
+    int getHopSize() const { return m_fftHopSize; }
+    int getFftSize();
+    int getSampleRate() const { return m_sampleRate; }
     int getNumOverlaps() const { return m_numOverlaps; }
     std::shared_ptr<PhaseBuffer> getPhaseBuffer() const { return m_phaseBuffer; }
 
-	virtual std::unique_ptr<StandardFFTProcessor> createSpectralProcess(
+    virtual std::unique_ptr<StandardFFTProcessor> createSpectralProcess(
         int index, int fftSize, int hopSize, int sampleRate, int numOverlaps, int channel, int channelCount
     ) = 0;
- 
-    virtual void receivedMidi(MidiBuffer& midiBuffer){};
-	virtual void prepareProcess(StandardFFTProcessor*) {}	
-	virtual void onFftSizeChanged() {};	
-	
+
+    virtual void receivedMidi(MidiBuffer& midiBuffer) {};
+    virtual void prepareProcess(StandardFFTProcessor*) {}
+    virtual void onFftSizeChanged() {};
+
     virtual void process(std::vector<std::vector<float>>* input, std::vector<std::vector<float>>* output);
-    // single output bus
-    virtual void process(std::vector<BusAudioData>& input, BusAudioData& output);
-	
-	void prepareToPlay(int fftSize, int sampleRate, int channelCount);			
-	void setFftSize(int fftSize);
+    void prepareToPlay(int fftSize, int sampleRate, int channelCount);
+    void setFftSize(int fftSize);
     void usePvoc(bool usePvoc) { m_phaseBuffer->setUsePvoc(usePvoc); };
     void setNumOverlaps(int newOverlapCount);
     void setWindowType(FftWindowType newWindowType);
     bool isPreparingToPlay() const { return m_isPreparingToPlay; }
     bool isPlaying() const { return m_isPlaying; }
 
-protected:	
-	std::vector< std::vector<std::unique_ptr<StandardFFTProcessor>> > m_spectralProcess;
+    virtual SimpleBusLayout getProcessorBusWant() const;
+    virtual void spectralProcess(std::vector<BusPolarPlusData>& input, BusPolarPlusData& output);
+protected:
+    std::vector< std::vector<std::unique_ptr<StandardFFTProcessor>> > m_spectralProcess;
 
 private:
     int m_numOverlaps;
-	int m_sampleRate;
-	int m_fftHopSize;
+    int m_sampleRate;
+    int m_fftHopSize;
     int m_numChans;
     int m_fftSize;
     bool m_isPreparingToPlay;
     bool m_isPlaying;
     int m_setOverlapsCallCount;
-    
+
     std::shared_ptr<PhaseBuffer> m_phaseBuffer;
 };

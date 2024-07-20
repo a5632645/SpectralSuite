@@ -89,6 +89,10 @@
               file="../shared/Resources/baseline-settings-20px.svg"/>
       </GROUP>
       <GROUP id="{1721A1CF-BA58-44A1-C899-0990436B24DA}" name="Audio">
+        <FILE id="akrQfc" name="FftCircleBuffer.cpp" compile="1" resource="0"
+              file="../shared/FftCircleBuffer.cpp"/>
+        <FILE id="EIUd6U" name="FftCircleBuffer.h" compile="0" resource="0"
+              file="../shared/FftCircleBuffer.h"/>
         <FILE id="g6uyNK" name="FftWindowType.h" compile="0" resource="0" file="../shared/FftWindowType.h"/>
         <FILE id="AQOYNm" name="StandardFFTProcessor.h" compile="0" resource="0"
               file="../shared/StandardFFTProcessor.h"/>
