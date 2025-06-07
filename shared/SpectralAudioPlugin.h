@@ -11,10 +11,7 @@
 #include "SpectralAudioProcessorInteractor.h"
 #include "ParameterContainerComponentFactory.h"
 #include "PluginParameters.h"
-
-//==============================================================================
-/**
-*/
+#include "logging/LoggerFactory.h"
 
 class SpectralAudioPluginUi;
 
@@ -27,14 +24,12 @@ public:
 public:
     class DependencyFactory {
     public:
-        virtual ~DependencyFactory(){};
+        virtual ~DependencyFactory(){}
         
         virtual std::shared_ptr<PluginParameters> createParams(SpectralAudioPlugin* plugin) = 0;
-//        virtual std::unique_ptr<ParameterContainerComponent> createUi(SpectralAudioPlugin* plugin) = 0;
-//        virtual std::unique_ptr<ParameterContainerComponent> createUi(SpectralAudioPlugin* plugin) = 0;
         virtual ParameterContainerComponent* createUi(SpectralAudioPlugin* plugin) = 0;
         virtual std::unique_ptr<SpectralAudioProcessorInteractor> createProcessor(SpectralAudioPlugin* plugin) = 0;
-        virtual Array<int> fftSizesToNotInclude() { return Array<int>(); };
+        virtual Array<int> fftSizesToNotInclude() { return Array<int>(); }
     };
     
 //	class Dependencies {
@@ -59,7 +54,7 @@ public:
 		//std::unique_ptr<SpectralAudioProcessor> audioProcessor, 
 		//std::unique_ptr<ParameterContainerComponentFactory> parameterComponentFactory,		
 	);
-    ~SpectralAudioPlugin();
+    ~SpectralAudioPlugin() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -107,18 +102,24 @@ private:
 	void emptyOutputs();
 	void setFftSize(int fftSize);
     void initialiseParameters();
-			
-	std::shared_ptr<PluginParameters> parameters;
-//    std::unique_ptr<ParameterContainerComponent> m_parameterUiComponent;
-	std::unique_ptr<SpectralAudioProcessorInteractor> m_audioProcessorInteractor;
+    bool isPreparingToPlay() const { return m_audioProcessorInteractor->isPreparingToPlay(); }
+    bool isInvalidFftModificationState() const {
+        return
+            m_fftSwitcher.threadShouldExit()
+            || m_audioProcessorInteractor->isPreparingToPlay()
+            || m_audioProcessorInteractor->isPlaying()
+            || m_output.empty()
+            || m_input.empty();
+    }
+    
+    std::shared_ptr<PluginParameters> parameters;
+    std::unique_ptr<SpectralAudioProcessorInteractor> m_audioProcessorInteractor;
 
 	FftSizeChoiceAdapter m_fftSizeChoiceAdapter;
     FftStyleChoiceAdapter m_fftStyleChoiceAdapter;
     FftOverlapsChoiceAdapter m_fftOverlapsChoiceAdapter;
     FftWindowChoiceAdapter m_fftWindowChoiceAdapter;
 	FftSwitcherThread m_fftSwitcher;
-	
-	std::unique_ptr<FileLogger> m_logger;
 	
 	// io buffers: TODO n chan
 	int m_internalBufferReadWriteIndex;
@@ -128,6 +129,7 @@ private:
 	//SpectralAudioPluginUi* m_ui;	
 	VersionCheckThread m_versionCheckThread;
     std::unique_ptr<DependencyFactory> m_dependencyFactory;
+    std::unique_ptr<LoggerRef> m_loggerRef;
  
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectralAudioPlugin)
 };

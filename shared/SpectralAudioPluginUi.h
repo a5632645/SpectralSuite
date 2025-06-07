@@ -27,7 +27,7 @@ class SpectralAudioPluginUi :
 {
 public:	    
     SpectralAudioPluginUi(SpectralAudioPlugin&, PluginParameters* pluginParameters, ParameterContainerComponent* parameterContainer);
-    ~SpectralAudioPluginUi();
+    ~SpectralAudioPluginUi() override;
 
     //==============================================================================
     void paint (Graphics&) override;
@@ -40,6 +40,8 @@ public:
     // Inherited via AudioValueTreeStateOnLoadListener
 	virtual void onAudioValueTreeStateLoadedFromXmlState(PluginParameters* newState, XmlElement* xmlState) override {
 		parameterContainer->onAudioValueTreeStateLoadedFromXmlState(newState, xmlState);
+        auto settingProperties = parameterContainer->getSettingsProperties();
+        settingsPage.setProperties(settingProperties);
 	}
     
     void onFftSizeChanged() {
@@ -49,9 +51,10 @@ public:
     void onFftStyleChanged() {
         parameterContainer->onFftStyleChanged();
     }
-private:
+//private:
 	enum Messages {
-		UPDATE_AVAILABLE
+		UPDATE_AVAILABLE,
+        UPDATE_PROPERTIES
 	};
 	
 	typedef AudioProcessorValueTreeState::SliderAttachment SliderAttachment;

@@ -17,7 +17,7 @@ SpectralAudioPluginUi::SpectralAudioPluginUi(
 	auto primaryTextColour = Colour::fromString(TEXT_COLOUR);
 	title.setText(JucePlugin_Name, NotificationType::dontSendNotification);
 	title.setColour(Label::ColourIds::textColourId, primaryTextColour);
-	title.setFont(20.0);
+    title.setFont(FontOptions().withPointHeight(20.0));
 	addAndMakeVisible(title);        
 
     parameterViewPort.setViewedComponent(this->parameterContainer);
@@ -63,6 +63,7 @@ SpectralAudioPluginUi::SpectralAudioPluginUi(
 
 		addAndMakeVisible(&settingsButton);		
 		addChildComponent(&settingsPage);
+        
 	}
 
 	addChildComponent(&aboutPage);
@@ -84,6 +85,7 @@ void SpectralAudioPluginUi::resized()
 	if (!hasInit) {
 		hasInit = true;
 		((SpectralAudioPlugin*)&processor)->checkForUpdates(this);
+        this->postCommandMessage(Messages::UPDATE_PROPERTIES);
 	}
     
 	auto xPadding = 8;
@@ -117,6 +119,9 @@ void SpectralAudioPluginUi::handleCommandMessage(int messageId)
 		aboutButton.getNormalImage()->replaceColour(Colour::fromString(TEXT_COLOUR), Colour::fromString(WARNING_COLOUR));				
 		aboutButton.repaint();		
 	}
+    else if (messageId == Messages::UPDATE_PROPERTIES) {
+        parameterContainer->onPropertiesChanged();
+    }
 }
 
 void SpectralAudioPluginUi::onNewVersionAvailable(VersionInfo* newVersionInfo)

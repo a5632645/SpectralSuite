@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 #include "../../shared/StandardFFTProcessor.h"
 #include "../../shared/SpectralAudioProcessorInteractor.h"
 #include "PhaseLockParameters.h"
@@ -13,7 +13,8 @@ public:
 	void prepareProcess(StandardFFTProcessor* spectralProcessor) override;
 	std::unique_ptr<StandardFFTProcessor> createSpectralProcess(int index, int fftSize, int hopSize,
         int sampleRate, int numOverlaps, int chans, int numChans) override;            
-
-private:	
+    
+    void process(SpectralAudioPlugin* plugin, std::vector<std::vector<float>>* input, std::vector<std::vector<float>>* output) override;
+private:
 	std::shared_ptr<PhaseLockParameters> m_params;    
 };

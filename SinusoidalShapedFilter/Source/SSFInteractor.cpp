@@ -19,7 +19,7 @@ void SSFInteractor::prepareProcess(StandardFFTProcessor* spectralProcess) {
 
 std::unique_ptr<StandardFFTProcessor> SSFInteractor::createSpectralProcess(
     int index, int fftSize, int hopSize, int sampleRate,
-    int numOverlaps, int chan, int numChans
+    int numOverlaps, int, int
 )
 {
     if(m_wavetable == nullptr) {
@@ -31,5 +31,9 @@ std::unique_ptr<StandardFFTProcessor> SSFInteractor::createSpectralProcess(
 }
 
 void SSFInteractor::onFftSizeChanged(){
+    if(m_wavetable == nullptr) {
+        m_wavetable = std::make_shared<Table<float> >(getFftSize() / 2, 1, 1);
+    }
+    
     m_wavetable->resize(getFftSize() / 2);
 }

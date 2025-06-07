@@ -1,4 +1,12 @@
 % Spectral Suite
+## Version 2.2.0
+    * Added 'Scale' parameter to Frequency Shift
+## Version 2.1.12
+    * Fix bug in phase lock where audio would continue playing even when
+      playhead is stopped
+## Version 2.1.11
+    * Fix au validation so plugins should work better in Logic on Mac
+    * Added max and min settings for frequency magnet
 ## Version 2.1.10
     * Contribution by a5632645 fixed spectral gate tilt checkbox issue
     * Fixed some memory leaks
